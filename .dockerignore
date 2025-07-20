@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local configuration
+config.yml
+appointments.txt
+
+# Other
+.DS_Store
+README.md
+CHANGELOG.md
+LICENSE 

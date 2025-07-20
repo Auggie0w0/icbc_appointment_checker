@@ -89,13 +89,55 @@ Done! Now you will get a notification when the next appointment becomes availabl
 
 Run the script with the specified config file:
 
-    ```bash
-    python icbc_appointment_checker.py config.yml
-    ```
+```bash
+python icbc_appointment_checker.py config.yml
+```
+
+For continuous checking, you can use the `--interval` flag:
+
+```bash
+python icbc_appointment_checker.py config.yml --interval 3600
+```
+
+This will check every 3600 seconds (1 hour).
+
+## Docker Setup
+
+You can run the ICBC appointment checyker continuously in Docker:
+
+1. Create your `config.yml` file from the example:
+
+   ```bash
+   cp config.yml.example config.yml
+   ```
+
+2. Edit the `config.yml` file with your details
+
+3. Build and run with Docker Compose:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+   This will run the checker in the background and automatically restart if it crashes.
+
+4. Check the logs:
+
+   ```bash
+   docker-compose logs -f
+   ```
+
+5. To stop the checker:
+
+   ```bash
+   docker-compose down
+   ```
+
+You can adjust the check interval by modifying the `CHECK_INTERVAL` environment variable in the `docker-compose.yml` file.
 
 ## Scheduling with Crontab
 
-To schedule the script to run at regular intervals, you can use `crontab`. Here’s how to set it up:
+To schedule the script to run at regular intervals, you can use `crontab`. Here's how to set it up:
 
 1. Open the crontab editor:
 

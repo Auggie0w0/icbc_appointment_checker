@@ -9,6 +9,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from faker import Faker
+import time
+import sys
 
 # Load configuration from YAML file
 def load_config(config_path):
@@ -201,24 +203,58 @@ def update_appointments_if_needed(new_appointments, old_appointments, config):
     else:
         logger.info("No changes in appointments. No update required.")
 
-def main():
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="ICBC Appointment Checker")
-    parser.add_argument('config', type=str, help='Path to the config file')
-    args = parser.parse_args()
-
+def check_appointments_once(config_path):
     # Load configuration
-    config = load_config(args.config)
+    config = load_config(config_path)
     token = get_token(config)
     if not token:
         logger.error("No token received. Exiting.")
-        return
+        return False
 
     new_appointments = get_appointments(config, token)
     old_appointments = load_appointments_from_txt('appointments.txt')
 
     # Call the new function to handle update logic
     update_appointments_if_needed(new_appointments, old_appointments, config)
+    return True
+
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="ICBC Appointment Checker")
+    parser.add_argument('config', type=str, help='Path to the config file')
+    parser.add_argument('--interval', type=int, help='Check interval in seconds (for continuous mode)')
+    args = parser.parse_args()
+
+    # Get interval from environment variable if not provided as argument
+    interval = args.interval
+    if not interval and 'CHECK_INTERVAL' in os.environ:
+        try:
+            interval = int(os.environ['CHECK_INTERVAL'])
+        except ValueError:
+            logger.error("Invalid CHECK_INTERVAL environment variable. Must be an integer.")
+    
+    # Run once if no interval is specified
+    if not interval:
+        check_appointments_once(args.config)
+        return
+
+    # Run continuously with the specified interval
+    logger.info(f"Running in continuous mode with {interval} seconds interval")
+    
+    while True:
+        try:
+            logger.info(f"Checking appointments at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            success = check_appointments_once(args.config)
+            if not success:
+                logger.warning("Check failed, will retry in 60 seconds")
+                time.sleep(60)  # Shorter retry on failure
+            else:
+                logger.info(f"Next check in {interval} seconds")
+                time.sleep(interval)
+        except Exception as e:
+            logger.error(f"Error during check: {e}")
+            logger.info("Will retry in 60 seconds")
+            time.sleep(60)  # Shorter retry on error
 
 if __name__ == "__main__":
     main()
